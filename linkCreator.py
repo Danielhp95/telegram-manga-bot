@@ -33,7 +33,7 @@ def createLinkToChapter(source,name,chapter):
     return url
 
 def linkAllSources(name,chapter):
-    return [link(name,chapter) for source, link in SOURCES.viewitems() if checkIfChapterExists(source,name,chapter)]
+    return [link(name,chapter) for source, link in SOURCES.items() if checkIfChapterExists(source,name,chapter)]
 
 # Checks if any source in SOURCES has the input chapter for input manga name
 def pollSources(name,chapter):
@@ -45,7 +45,7 @@ subscribed manga
 """
 def busyPollSourcesForNextChapter():
     while True:
-        for manga, current_chapter in manga_and_current_chapter.viewitems():
+        for manga, current_chapter in manga_and_current_chapter.items():
             new_chapter_released = pollSources(manga, current_chapter + 1)
             if new_chapter_released:
                 # USE LOGGING
