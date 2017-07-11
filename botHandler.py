@@ -42,6 +42,10 @@ def send_message(chat=None,text='EMPTY MESSAGE'):
     url = URL + 'sendMessage'
     res = requests.post(url, data=params)
 
+def send_help_message(chat=None):
+    # TODO:  write help message
+    help_message = 'Write message'
+    send_message(chat=chat,text=help_message)
 
 """
 Util functions
@@ -88,12 +92,27 @@ def process_single_update(update):
     message = update['message']['text']
     space_sep_message = message.split(' ', 1)
     logger.debug('Message text: %s', message)
-    activation_threshold = 1
     logger.debug('Space_separated: %s', space_sep_message[0])
+    activation_threshold = 1
     activation_trigger = lev.distance(str(space_sep_message[0]), '/mangaka') <= activation_threshold
 
     if activation_trigger:
         logger.debug('Activation triggered')
+        chat_id = update['message']['chat']['id'] # Chat (group or private) where message was sent
+        
+        # If message is empty, send help message
+        if len(space_sep_message) == 1:
+            send_help_message(chat_id)
+            return
+
+        # If message requests 'subscribe' <mang_name> subscribe to manga
+        first_word = message.rsplit(' ', 1)
+        if first_word == 'subscribe':
+            # Send message saying that subscription was successful. Find latest chapter
+            # TODO: XML add chat id to subscribers
+            raise NotImplementedError
+
+        # If message requests <manga_name> <chapter> send links
         message = space_sep_message[1]
         manga_and_chapter   = message.rsplit(' ', 1)
         manga_name, chapter = manga_and_chapter[0], manga_and_chapter[1]
@@ -101,8 +120,8 @@ def process_single_update(update):
         logger.info('Manga: %s. Chapter: %s', manga_name, chapter)
 
         links = linkCreator.linkAllSources(manga_name, chapter)
-        chat_id = update['message']['chat']['id']
         send_message(chat=chat_id,text=formatLinks(links))
-    pass
+        return
 
+        
 process_multiple_updates(get_updates())
