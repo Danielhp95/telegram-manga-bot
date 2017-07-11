@@ -1,32 +1,168 @@
 import bs4
 from bs4 import BeautifulSoup
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+"""
+DESIGN CHOICE: all functions that return a value return a string.
+"""
 
 BOT_STATE                   = 'bot_state/bot_state.xml'
 MANGA_AND_SUBSCRIPTIONS     = 'bot_state/manga_and_subscriptions.xml'
 SOURCES                     = 'bot_state/sources.xml'
 
-def add_subscriber_to_manga(manga, chat_id):
-    pass
+def add_subscriber_to_manga(manga_name, chat_id):
+    # Opening file
+    root = open_file(MANGA_AND_SUBSCRIPTIONS)
+    manga = find_manga_by_name_from_list(root.find_all('manga'),manga_name)
 
-def remove_subscriber_from_manga(manga, chat_id):
-    pass
+    if manga is None:
+        return False
 
-def add_manga_name(manga):
-    pass
+    new_sub_tag = root.new_tag('subscriber')
+    new_sub_tag.string = str(chat_id)
+    manga.subscribers.append(new_sub_tag)
 
-def set_manga_current_chapter(manga, chapter):
-    pass
+    write_xml_to_file(root,MANGA_AND_SUBSCRIPTIONS)
+    return True
 
-def add_manga_source(source):
-    pass
+def get_subscribers_for_manga(manga_name):
+    root = open_file(MANGA_AND_SUBSCRIPTIONS)
+    manga = find_manga_by_name_from_list(root.find_all('manga'),manga_name)
+    subs_tags = manga.find_all('subscriber')
+    return [sub.string for sub in subs_tags]
+
+#TODO not done yet.
+def remove_subscriber_from_manga(manga_name, chat_id):
+    root = open_file(MANGA_AND_SUBSCRIPTIONS)
+    manga = find_manga_by_name_from_list(root.find_all('manga'),manga_name)
+    subscriber_list = manga.subscribers.findChildren()
+    
+    extracted_sub = None
+    for sub in subscriber_list:
+        if sub.string == str(chat_id):
+            extracted_sub = sub.extract()
+    return extracted_sub is not None 
+    
+    
+
+"""
+    Adds a new manga in xml to the file specified in MANGA_AND_SUBSCRIPTIONS
+    <mangas>
+        <manga>
+            <name>
+            <latest_chapter>
+            <subscribers>
+                <subscriber>...
+            </subscribers> 
+        </manga>
+        ...
+    </mangas>
+"""
+# TODO: Make sure every call uses latest_chapter
+def add_manga(manga_name=None, latest_chapter=None):
+    if manga_name is None:
+        raise  ValueError('Manga name must be present')
+    
+    # Openning File
+    root = open_file(MANGA_AND_SUBSCRIPTIONS)
+    
+    # Create tags for name, chapter and subscribers
+    name_tag = root.new_tag('manga_name') # If we called  it 'name' it would clash with beautiful soup notation
+    name_tag.string = manga_name
+
+    latest_chapter_tag = root.new_tag('latest_chapter')
+    # If last chapter is not present, leave tag open
+    if latest_chapter is not None:
+        logger.info('Latest chapter of {} set to {}'.format(manga_name, latest_chapter))
+        latest_chapter_tag.string = str(latest_chapter)
+    
+    # Subscribers are specified as chat ids
+    subscribers_tag = root.new_tag('subscribers')
+
+    new_manga_tag = root.new_tag('manga')
+
+    # Append new tags to BeautifulSoup object
+    new_manga_tag.append(name_tag)
+    new_manga_tag.append(latest_chapter_tag)
+    new_manga_tag.append(subscribers_tag)
+    # Append to root tag
+    root.mangas.append(new_manga_tag)
+
+    #Write to file
+    write_xml_to_file(root, MANGA_AND_SUBSCRIPTIONS)
+
+def set_manga_latest_chapter(manga_name, latest_chapter):
+    # Openning File
+    root = open_file(MANGA_AND_SUBSCRIPTIONS)
+
+    # Finding the manga and changing the latest chapter value
+    manga = find_manga_by_name_from_list(root.find_all('manga'),manga_name)
+    manga.latest_chapter.string = str(latest_chapter)
+    write_xml_to_file(root, MANGA_AND_SUBSCRIPTIONS) 
+
+def get_manga_latest_chapter(manga_name):
+    root = open_file(MANGA_AND_SUBSCRIPTIONS)
+    manga = find_manga_by_name_from_list(root.find_all('manga'),manga_name)
+    return manga.latest_chapter.string
+
+
+# Valid_mangas input serves to identify which mangas can be retrieved from source
+def add_manga_source(source, valid_mangas='all'):
+    root = open_file(SOURCES)
+
+    new_source_tag = root.new_tag('source')
+    new_source_tag['valid_mangas'] = valid_mangas
+    new_source_tag.string          = source
+
+    root.sources.append(new_source_tag)
+    write_xml_to_file(root, SOURCES)
+
+def get_sources_for_manga(manga_name):
+    root = open_file(SOURCES)
+
+    # Given a source tag, checks if it is valid for this manga
+    source_for_manga = lambda source_tag: source_tag['valid_mangas'] == manga_name or source_tag['valid_mangas'] == 'all'
+    source_tags = root.sources.find_all(source_for_manga)
+    return [source.string for source in source_tags]
 
 def set_last_message_id(message_id):
+    root = open_file(BOT_STATE)
+    root.bot_state.last_message_id.string = str(message_id)
+    write_xml_to_file(root,BOT_STATE)
     pass
+
+"""
+    Utils functions
+"""
+
+# Finds a manga by it's manga_name field given a list of mangas
+def find_manga_by_name_from_list(mangas, name_to_find):
+    for manga in mangas:
+        if manga.manga_name.string == name_to_find:
+            return manga
+    logger.debug('Manga {} not found'.format(name_to_find))
+    return None
+
+# Opens xml file into a beautifulSoup object
+def open_file(filename):
+    f = open(filename, 'r')
+    root = BeautifulSoup(f, features='xml')
+    f.close()
+    return root
+
+# Writes content to filename
+def write_xml_to_file(beautifulSoup, filename):
+    markdown = str(beautifulSoup) #beautifulSoup.prettify()
+    with open(filename,'w+') as f:
+        f.write(str(markdown))
+        f.write('\n')
+
 
 """
     Initialization functions in case files are destroyed.
 """
-
 def initialize_bot_state():
     state = bs4.BeautifulSoup('<bot_state></bot_state>',features='xml')
     last_message_id = state.new_tag('last_message_id')
@@ -37,15 +173,21 @@ def initialize_bot_state():
     state.bot_state.append(number_of_chats)
     write_xml_to_file(state, BOT_STATE)
 
+def initialize_manga_and_subscriptions():
+    mangas = bs4.BeautifulSoup('<mangas></mangas>',features='xml')
+    write_xml_to_file(mangas, MANGA_AND_SUBSCRIPTIONS)
 
-    #Save to file
-def write_xml_to_file(beautifulSoup, filename):
-    markdown = beautifulSoup.prettify()
-    with open(filename,'w+') as f:
-        f.write(markdown)
-        f.write('\n')
+def initialize_sources():
+    mangas = bs4.BeautifulSoup('<sources></sources>',features='xml')
+    write_xml_to_file(mangas, SOURCES)
 
+def initialize_xml_files():
+    initialize_bot_state()
+    initialize_sources()
+    initialize_manga_and_subscriptions()
 
 if __name__ == '__main__':
-    initialize_bot_state()
-
+    initialize_xml_files()
+    add_manga('one piece')
+    set_manga_latest_chapter('one piece', 20)
+    print(get_manga_latest_chapter('one piece'))
