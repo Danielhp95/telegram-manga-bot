@@ -107,25 +107,79 @@ def get_manga_latest_chapter(manga_name):
     manga = find_manga_by_name_from_list(root.find_all('manga'),manga_name)
     return manga.latest_chapter.string
 
+"""
+    Adds a new source in xml to the file specified in SOURCES
+    <sources>
+        <source>
+            <source_name>
+            <link>
+            <separator>
+            <existance_check>
+                <target_tag>...
+                <attr_name>...
+                <attr_value>...
+            </existance_check> 
+        </source>
+        ...
+    </sources>
+"""
+# TODO: Make sure every call uses latest_chapter
 
 # Valid_mangas input serves to identify which mangas can be retrieved from source
-def add_manga_source(source, valid_mangas='all'):
+def add_manga_source(name=None, generic_link=None, valid_mangas='all', separator=None,
+                     target_tag=None, attr_name=None, attr_value=None):
+    if name is None or generic_link is None or separator is None:
+        raise ValueError('Both the name of the source and the generic link and separator must be set')
+
     root = open_file(SOURCES)
 
     new_source_tag = root.new_tag('source')
     new_source_tag['valid_mangas'] = valid_mangas
-    new_source_tag.string          = source
+
+    source_name_tag = root.new_tag('source_name')
+    source_name_tag.string = name
+
+    source_link_tag = root.new_tag('link')
+    source_link_tag.string = generic_link
+
+    source_separator_tag = root.new_tag('separator')
+    source_separator_tag.string = separator
+
+    if target_tag is not None and attr_name is not None and attr_value is not None:
+        source_existance_check_tag = root.new_tag('existence_check')
+
+        source_existance_target_tag = root.new_tag('target_tag')
+        source_existance_target_tag.string = target_tag
+
+        source_existance_attr_name  = root.new_tag('attr_name')
+        source_existance_attr_name.string = attr_name
+
+        source_existance_attr_value = root.new_tag('attr_value')
+        source_existance_attr_value.string = attr_value
+
+        source_existance_check_tag.append(source_existance_target_tag)
+        source_existance_check_tag.append(source_existance_attr_name)
+        source_existance_check_tag.append(source_existance_attr_value)
+
+        new_source_tag.append(source_existance_check_tag)
+
+    new_source_tag.append(source_name_tag)
+    new_source_tag.append(source_link_tag)
+    new_source_tag.append(source_separator_tag)
 
     root.sources.append(new_source_tag)
+    logger.debug('New source added, current number of sources: {}'.format(len(root.find_all('source'))))
     write_xml_to_file(root, SOURCES)
 
 def get_sources_for_manga(manga_name):
     root = open_file(SOURCES)
 
     # Given a source tag, checks if it is valid for this manga
-    source_for_manga = lambda source_tag: source_tag['valid_mangas'] == manga_name or source_tag['valid_mangas'] == 'all'
+    source_for_manga = lambda source: source.name == 'source' and (source['valid_mangas'] == manga_name or source['valid_mangas'] == 'all')
+    d = root.sources.find_all('source')
     source_tags = root.sources.find_all(source_for_manga)
-    return [source.string for source in source_tags]
+    return source_tags
+    #return [(source.source_name.string, source.link.string, source.separator.string) for source in source_tags]
 
 def set_last_message_id(message_id):
     root = open_file(BOT_STATE)
@@ -181,6 +235,12 @@ def initialize_sources():
     mangas = bs4.BeautifulSoup('<sources></sources>',features='xml')
     write_xml_to_file(mangas, SOURCES)
 
+    # Minimal sources
+    add_manga_source(name='mangafreak', generic_link='http://www3.mangafreak.net/Read1_{}_{}', valid_mangas='all', separator='_')
+    add_manga_source(name='mangasee',   generic_link='http://mangaseeonline.us/read-online/{}-chapter-{}-page-1.html', valid_mangas='all', separator='-')
+    add_manga_source(name='mangapanda', generic_link='http://mangapanda.com/{}/{}', valid_mangas='all', separator='-', target_tag='img', attr_name='name', attr_value='img')
+    add_manga_source(name='mangadeep',  generic_link='http://www.mangadeep.com/{}/{}/', valid_mangas='all', separator='_', target_tag='img', attr_name='class', attr_value='manga-page')
+
 def initialize_xml_files():
     initialize_bot_state()
     initialize_sources()
@@ -189,5 +249,4 @@ def initialize_xml_files():
 if __name__ == '__main__':
     initialize_xml_files()
     add_manga('one piece')
-    set_manga_latest_chapter('one piece', 20)
-    print(get_manga_latest_chapter('one piece'))
+    set_manga_latest_chapter('one piece', 871)

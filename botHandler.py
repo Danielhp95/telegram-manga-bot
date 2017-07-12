@@ -5,7 +5,7 @@ import Levenshtein as lev
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-print('level = ' + str(logger.getEffectiveLevel() == logging.DEBUG))
+#print('level = ' + str(logger.getEffectiveLevel() == logging.DEBUG))
 
 TOKEN = "334385148:AAGp8vXViO_kw_pcKr3rMRQCE46LV7Xkmn4"
 URL   = "https://api.telegram.org/bot{}/".format(TOKEN)
@@ -42,7 +42,7 @@ def send_message(chat=None,text='EMPTY MESSAGE'):
     url = URL + 'sendMessage'
     res = requests.post(url, data=params)
 
-def send_help_message(chat=None):
+def action_send_help_message(chat=None):
     # TODO:  write help message
     help_message = 'Write message'
     send_message(chat=chat,text=help_message)
@@ -90,7 +90,7 @@ def process_single_update(update):
     logger.debug('Message id: %i', update['message']['message_id'])
 
     message = update['message']['text']
-    space_sep_message = message.split(' ', 1)
+    space_sep_message = messge.split(' ', 1)
     logger.debug('Message text: %s', message)
     logger.debug('Space_separated: %s', space_sep_message[0])
     activation_threshold = 1
@@ -102,26 +102,32 @@ def process_single_update(update):
         
         # If message is empty, send help message
         if len(space_sep_message) == 1:
-            send_help_message(chat_id)
+            action_send_help_message(chat_id)
             return
 
         # If message requests 'subscribe' <mang_name> subscribe to manga
         first_word = message.rsplit(' ', 1)
         if first_word == 'subscribe':
             # Send message saying that subscription was successful. Find latest chapter
-            # TODO: XML add chat id to subscribers
-            raise NotImplementedError
+            manga_name = message.split(' ',  2)[2] # ['/mangaka','subscribe',manga_name]
+            xmlHandler.add_subscriber_to_manga(manga_name)
 
         # If message requests <manga_name> <chapter> send links
         message = space_sep_message[1]
         manga_and_chapter   = message.rsplit(' ', 1)
         manga_name, chapter = manga_and_chapter[0], manga_and_chapter[1]
+        action_retrieve_manga_chapter(manga_name, chapter)
+        return
+"""
+    Sends a list of links of manga chapters from the input manga and chapter number
+"""
+def action_retrieve_manga_chapter(manga_name, chapter):
         chapter = chapter if chapter != 'latest' else linkCreator.findLatestChapter(manga_name)
         logger.info('Manga: %s. Chapter: %s', manga_name, chapter)
 
         links = linkCreator.linkAllSources(manga_name, chapter)
         send_message(chat=chat_id,text=formatLinks(links))
-        return
+
 
         
 process_multiple_updates(get_updates())
