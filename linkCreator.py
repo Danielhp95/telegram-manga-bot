@@ -7,13 +7,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Map from domain name to URL for each manga site, formatting occurs within lambda functions
-SOURCES = {"mangafreak" : lambda name,chapter: "http://www3.mangafreak.net/Read1_{}_{}".format(name.replace(' ','_').lower(),chapter),
-           "mangasee" : lambda name,chapter: "http://mangaseeonline.us/read-online/{}-chapter-{}-page-1.html".format(name.replace(' ','-').lower(),chapter),
-           "mangapanda" : lambda name,chapter: "http://mangapanda.com/{}/{}".format(name.replace(' ','-').lower(),chapter),
-           "mangadeep" : lambda name,chapter: "http://www.mangadeep.com/{}/{}/".format(name.replace(' ','_').lower(),chapter)
-          }
-
 # Extra source for one piece
 # "readonepiece" : lambda name, chapter: "http://ww1.readonepiece.com/chapter/{}-chapter-{}/".format(name.replace(' ','-').lower(),chapter)
 
