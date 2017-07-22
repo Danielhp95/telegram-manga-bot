@@ -34,7 +34,8 @@ def createLink(source, manga_name, chapter):
     sep = source.separator.string
     if source.source_name.string == 'mangadeep' and manga_name.lower() == 'one piece':
         manga_name = 'one_peice' # Super hacky way to get mangadeep to work
-    return link.format(manga_name.replace(' ',sep).lower(),chapter)
+    final_link = link.format(manga_name.replace(' ',sep).lower(),chapter)
+    return final_link
 
 
 """
@@ -100,5 +101,5 @@ def busyPollSourcesForNextChapter():
         time.sleep(4)
 
 if __name__ == '__main__':
-    print(linkAllSources('one piece',872))
+    print(linkAllSources('one piece',873))
     #busyPollSourcesForNextChapter()

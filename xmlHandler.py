@@ -187,6 +187,12 @@ def set_last_message_id(message_id):
     write_xml_to_file(root,BOT_STATE)
     pass
 
+def get_last_message_id():
+    root = open_file(BOT_STATE)
+    return root.bot_state.last_message_id.string
+
+
+
 """
     Utils functions
 """
