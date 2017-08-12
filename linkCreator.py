@@ -16,7 +16,6 @@ Params:
     name:   name of the manga.
     chapter: chapter to read
 """
-#TODO ADD STRONGER CHECKS
 def checkIfChapterExists(source, manga_name, chapter):
     url = createLink(source, manga_name, chapter) 
     # Checks for chapter existence
@@ -65,7 +64,6 @@ def urlContainsMangaChapter(url, source):
 """
 def linkAllSources(manga_name,chapter):
     sources = xmlHandler.get_sources_for_manga(manga_name)
-    
     return [createLink(source, manga_name, chapter) for source in sources if checkIfChapterExists(source, manga_name, chapter)]
 
 def findLatestChapter(manga_name):
@@ -82,6 +80,7 @@ subscribed manga
 """
 #TODO: link new_chapter released to aciion_send_chapter_release_message()
 def busyPollSourcesForNextChapter():
+    sleeping_frequence_seconds = 4
     while True:
         mangas = xmlHandler.get_all_mangas()
         for manga in mangas:
@@ -98,7 +97,7 @@ def busyPollSourcesForNextChapter():
                 print('caca')
                 pass
         logger.info('FINISHED polling round.')
-        time.sleep(4)
+        time.sleep(sleeping_frequence_seconds)
 
 if __name__ == '__main__':
     print(linkAllSources('one piece',874))
