@@ -53,7 +53,7 @@ def urlContainsMangaChapter(url, source):
     attr_name  = source.existence_check.attr_name.string  
     attr_value = source.existence_check.attr_value.string  
     res = requests.get(url)
-    soup = BeautifulSoup(res.content)
+    soup = BeautifulSoup(res.content, "lxml")
     manga_page_exists = soup.find(tag_name, {attr_name : attr_value})
     return manga_page_exists is not None
 
