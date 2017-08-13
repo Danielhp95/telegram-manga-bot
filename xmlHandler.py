@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+import os
 import bs4
 from bs4 import BeautifulSoup
 import logging
@@ -247,7 +249,11 @@ def initialize_sources():
     add_manga_source(name='mangapanda', generic_link='http://mangapanda.com/{}/{}', valid_mangas='all', separator='-', target_tag='img', attr_name='name', attr_value='img')
     add_manga_source(name='mangadeep',  generic_link='http://www.mangadeep.com/{}/{}/', valid_mangas='all', separator='_', target_tag='img', attr_name='class', attr_value='manga-page')
 
+def initialize_directory():
+    os.mkdir("bot_state/")
+
 def initialize_xml_files():
+    initialize_directory()
     initialize_bot_state()
     initialize_sources()
     initialize_manga_and_subscriptions()
