@@ -42,7 +42,6 @@ def send_message(chat=None,text='EMPTY MESSAGE'):
     res = requests.post(url, params=dict(chat_id=chat, text=text))
 
 def action_send_help_message(chat=None):
-    # TODO:  write help message
     help_message = """Yo, here are the list of possible commands:
     /mangaka get <manga name> <manga chapter> 
         (i.e /mangaka get one piece 874)
@@ -111,7 +110,7 @@ def process_single_update(update):
 
         parameters = message.split(' ',1)[1] # [/mangaka, parameters]
         action = parameters.split(' ',1)[0]
-        if action not in ALLOWED_ACTIONS: # If actions is non valid
+        if action not in ALLOWED_ACTIONS or action == 'help': # If actions is non valid
             action_send_help_message(chat_id)
             return
 
