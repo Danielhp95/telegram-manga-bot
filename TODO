@@ -5,3 +5,7 @@ Create ProcFile:
     check for  new  chapter
 Run Heroku localy: devcenter.heroku.com/articles/heroku-local
     heroku local <process type> 
+
+Find maximum chapter for a manga based on reliable source.
+brute force calling url with increasing number of chapter until
+no response is given.
