@@ -2,7 +2,6 @@ import json
 import requests
 import xmlHandler
 import linkCreator
-import Levenshtein as lev
 import logging
 logging.basicConfig(level=logging.INFO)
 logging.disable(logging.DEBUG)
@@ -11,6 +10,7 @@ logger = logging.getLogger('caca')
 
 TOKEN = "334385148:AAGp8vXViO_kw_pcKr3rMRQCE46LV7Xkmn4"
 URL   = "https://api.telegram.org/bot{}/".format(TOKEN)
+ALLOWED_ACTIONS = ['help','get','subscribe']
 
 """
 getUpdates functions
@@ -43,7 +43,14 @@ def send_message(chat=None,text='EMPTY MESSAGE'):
 
 def action_send_help_message(chat=None):
     # TODO:  write help message
-    help_message = 'Write message'
+    help_message = """Yo, here are the list of possible commands:
+    /mangaka get <manga name> <manga chapter> 
+        (i.e /mangaka get one piece 874)
+    /mangaka subscribe <manga name> 
+        (i.e /mangaka subscribe berserk)
+    /mangaka help 
+        (to send this message) """
+
     send_message(chat=chat,text=help_message)
 
 def action_send_non_understood_message(user_name, chat_id):
@@ -90,7 +97,7 @@ def process_single_update(update):
     logger.debug('Message text: %s', message)
     logger.debug('Space_separated: %s', space_sep_message[0])
     activation_threshold = 1
-    activation_trigger = lev.distance(str(space_sep_message[0]), '/mangaka') <= activation_threshold
+    activation_trigger = str(space_sep_message[0]) == '/mangaka'
 
     if activation_trigger:
         logger.debug('Activation triggered')
@@ -99,10 +106,15 @@ def process_single_update(update):
         # If message is empty, send help message
         if len(space_sep_message) == 1:
             action_send_help_message(chat_id)
+            return
 
 
         parameters = message.split(' ',1)[1] # [/mangaka, parameters]
         action = parameters.split(' ',1)[0]
+        if action not in ALLOWED_ACTIONS: # If actions is non valid
+            action_send_help_message(chat_id)
+            return
+
         action_parms = parameters.split(' ',1)[1] # [parameters]
         # If message requests 'subscribe' <mang_name> subscribe to manga
         if action == 'subscribe':
