@@ -14,6 +14,10 @@ BOT_STATE                   = 'bot_state/bot_state.xml'
 MANGA_AND_SUBSCRIPTIONS     = 'bot_state/manga_and_subscriptions.xml'
 SOURCES                     = 'bot_state/sources.xml'
 
+def get_all_mangas():
+    root = open_file(MANGA_AND_SUBSCRIPTIONS)
+    return root.find_all('manga')
+
 def add_subscriber_to_manga(manga_name, chat_id):
     # Opening file
     root = open_file(MANGA_AND_SUBSCRIPTIONS)
